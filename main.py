@@ -21,10 +21,11 @@ class KMeans:
         return ret
 
     def cluster(self, max_tries: int = 32767):
+        self.tries = 0
+
         cluster = np.zeros(self.feats.shape[0])
         centroids = self.feats.sample(n=self.k).values
 
-        self.tries = 0
         while self.tries < max_tries:
             self.tries += 1
 
@@ -41,21 +42,37 @@ class KMeans:
                 centroids = clustered_centroids
         return centroids, cluster, self._wcss(centroids, cluster)
 
+    def get_tries(self) -> int:
+        return self.tries
+
 
 def clustering(path: str):
-    data = pd.read_csv(path)
+    raw = pd.read_csv(path)
+
+    data = raw.copy()
     data.insert(1, "SepalSquare", data["SepalLengthCm"] * data["SepalWidthCm"])
     data.insert(1, "PetalSquare", data["PetalLengthCm"] * data["PetalWidthCm"])
-    print(data.describe(), data)
+    # print(data.describe(), data)
 
     # sb.pairplot(data, vars=data.columns[1:7], hue="Species")
     # plt.show()
 
     feats = data.iloc[:, [1, 2]]
-    print(feats)
+    # print(feats)
 
     km: KMeans = KMeans(feats=feats, k=3)
-    print(km.cluster())
+    cen, clu, cost = km.cluster()
+    result = raw.copy()
+    result.insert(1, "Class", clu)
+    # print(result)
+
+    sb.scatterplot(data.iloc[:, 1], data.iloc[:, 2], hue=clu)
+    sb.scatterplot(cen[:, 0], cen[:, 1], s=100, color='b', marker='X')
+
+    plt.xlabel("PetalSquare")
+    plt.ylabel("SepalSquare")
+
+    plt.show()
 
 
 if __name__ == "__main__":
