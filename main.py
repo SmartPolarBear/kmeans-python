@@ -55,8 +55,10 @@ def clustering(path: str):
     data.insert(1, "PetalSquare", data["PetalLengthCm"] * data["PetalWidthCm"])
     # print(data.describe(), data)
 
-    # sb.pairplot(data, vars=data.columns[1:7], hue="Species")
-    # plt.show()
+    sb.pairplot(data, vars=data.columns[1:7], hue="Species")
+    plt.show()
+
+    plt.clf()
 
     feats = data.iloc[:, [1, 2]]
     # print(feats)
@@ -68,9 +70,21 @@ def clustering(path: str):
     # print(result)
 
     class_map = dict()
+    species_names = list()
+    specie_count = dict()
+    class_count = dict()
+    error_count = dict()
     species = pd.DataFrame(result.iloc[:, [1, 6]].copy().groupby(by=clu).agg(pd.Series.mode))
     for i, row in species.iterrows():
+        species_names.append(row["Species"])
         class_map[row["Class"]] = row["Species"]
+        class_count[row["Species"]] = \
+            result.copy().loc[result["Class"] == row["Class"]].shape[0]
+        specie_count[row["Species"]] = \
+            result.copy().loc[result["Species"] == row["Species"]].shape[0]
+        error_count[row["Species"]] = \
+            result.copy().loc[(result["Class"] == row["Class"]) & (result["Species"] != row["Species"])].shape[0]
+
     pretty_clu = list([class_map[c] for c in clu])
 
     samples = pd.DataFrame(data.copy().iloc[cid.values])
@@ -85,6 +99,34 @@ def clustering(path: str):
 
     plt.title("Clustering the Iris Dataset")
 
+    plt.show()
+
+    plt.clf()
+
+    error = pd.DataFrame()
+    error["Species"] = species_names
+    error["Actual"] = [specie_count[s] for s in species_names]
+    error["Clustered"] = [class_count[s] for s in species_names]
+    error["Error"] = [error_count[s] for s in species_names]
+    error["ErrorRate"] = [round(float(error_count[s]) / float(class_count[s]), 2) for s in species_names]
+
+    print(error)
+
+    bar_data = pd.DataFrame(columns=["Species", "Count", "Type"])
+
+    for s in species_names:
+        bar_data = pd.concat([bar_data,
+                              pd.DataFrame({"Species": [s], "Count": [specie_count[s]], "Value": ["Actual"]}),
+                              pd.DataFrame({"Species": [s], "Count": [class_count[s]], "Value": ["Clustered"]}),
+                              pd.DataFrame({"Species": [s], "Count": [error_count[s]], "Value": ["Error"]})]
+                             , ignore_index=True, axis=0)
+
+    fig, ax1 = plt.subplots()
+    ax2 = ax1.twinx()
+    sb.lineplot(data=error["ErrorRate"], marker="s", sort=False, ax=ax2, label="Error Rate", color='r')
+    sb.barplot(x="Species", y="Count", data=bar_data, hue="Value", ax=ax1)
+
+    plt.title("Results and Errors")
     plt.show()
 
 
