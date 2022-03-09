@@ -1,0 +1,4 @@
+           Species  Actual  Clustered  Error  ErrorRate
+0   Iris-virginica      50         46      9       0.20
+1  Iris-versicolor      50         54     13       0.24
+2      Iris-setosa      50         50      0       0.00
