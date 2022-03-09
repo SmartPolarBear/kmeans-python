@@ -24,7 +24,8 @@ class KMeans:
         self.tries = 0
 
         cluster = np.zeros(self.feats.shape[0])
-        centroids = self.feats.sample(n=self.k).values
+
+        centroid_indexes, centroids = self.feats.sample(n=self.k).index, self.feats.sample(n=self.k).values
 
         while self.tries < max_tries:
             self.tries += 1
@@ -40,7 +41,7 @@ class KMeans:
                 break
             else:
                 centroids = clustered_centroids
-        return centroids, cluster, self._wcss(centroids, cluster)
+        return centroid_indexes, centroids, cluster, self._wcss(centroids, cluster)
 
     def get_tries(self) -> int:
         return self.tries
@@ -61,16 +62,28 @@ def clustering(path: str):
     # print(feats)
 
     km: KMeans = KMeans(feats=feats, k=3)
-    cen, clu, cost = km.cluster()
+    cid, cen, clu, cost = km.cluster()
     result = raw.copy()
     result.insert(1, "Class", clu)
     # print(result)
 
-    sb.scatterplot(data.iloc[:, 1], data.iloc[:, 2], hue=clu)
-    sb.scatterplot(cen[:, 0], cen[:, 1], s=100, color='b', marker='X')
+    class_map = dict()
+    species = pd.DataFrame(result.iloc[:, [1, 6]].copy().groupby(by=clu).agg(pd.Series.mode))
+    for i, row in species.iterrows():
+        class_map[row["Class"]] = row["Species"]
+    pretty_clu = list([class_map[c] for c in clu])
+
+    samples = pd.DataFrame(data.copy().iloc[cid.values])
+
+    sb.scatterplot(data.iloc[:, 1], data.iloc[:, 2], hue=pretty_clu)
+    sb.scatterplot(cen[:, 0], cen[:, 1], s=100, color='b', marker='X', label="Center")
+    sb.scatterplot(samples["PetalSquare"], samples["SepalSquare"], s=50, color='r', marker='s',
+                   label="Initial Elements Chosen")
 
     plt.xlabel("PetalSquare")
     plt.ylabel("SepalSquare")
+
+    plt.title("Clustering the Iris Dataset")
 
     plt.show()
 
