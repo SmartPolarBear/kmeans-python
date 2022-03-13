@@ -14,6 +14,12 @@ class KMeans:
         self.k = k
 
     def _wcss(self, centroids, cluster) -> float:
+        """
+        计算准则函数J
+        :param centroids:类的中心
+        :param cluster:分类内容
+        :return: J函数值
+        """
         ret = 0.0
         for i, val in enumerate(self.feats.values):
             ret += np.sqrt(
@@ -21,22 +27,35 @@ class KMeans:
         return ret
 
     def cluster(self, max_tries: int = 32767):
+        """
+        进行k-means分类
+        :param max_tries: 最大尝试次数
+        :return: 聚类中心在源数据集中的索引、聚类中心、聚类结果、J函数值
+        """
         self.tries = 0
 
+        # 将聚类结果初始化为0
         cluster = np.zeros(self.feats.shape[0])
 
+        # 随机抽样k个点作为初始的聚类中心
         centroid_indexes, centroids = self.feats.sample(n=self.k).index, self.feats.sample(n=self.k).values
 
         while self.tries < max_tries:
             self.tries += 1
 
+            # 对每个点计算
             for id, row in enumerate(self.feats.values):
                 min_dist = float('inf')
                 for cid, centroid in enumerate(centroids):
+                    # 计算距离，与距离最小的中心分为一类
                     dist = np.sqrt((centroid[0] - row[0]) ** 2 + (centroid[1] - row[1]) ** 2)
                     if dist < min_dist:
                         min_dist, cluster[id] = dist, cid
+
+            # 对每一类计算平均数，作为新的聚类中心
             clustered_centroids = self.feats.copy().groupby(by=cluster).mean().values
+
+            # 如果新的中心与旧中心重合，聚类就结束了
             if np.count_nonzero(centroids - clustered_centroids) == 0:
                 break
             else:
@@ -48,6 +67,11 @@ class KMeans:
 
 
 def clustering(path: str):
+    """
+    调用聚类函数、可视化结果
+    :param path: 数据集的路径
+    :return:
+    """
     raw = pd.read_csv(path)
 
     data = raw.copy()
@@ -60,9 +84,11 @@ def clustering(path: str):
 
     plt.clf()
 
+    # 取出选择的特征
     feats = data.iloc[:, [1, 2]]
     # print(feats)
 
+    # 调用聚类函数
     km: KMeans = KMeans(feats=feats, k=3)
     cid, cen, clu, cost = km.cluster()
     result = raw.copy()
@@ -131,6 +157,7 @@ def clustering(path: str):
 
 
 if __name__ == "__main__":
+    # 使用方法: main.py --dataset <数据集路径>
     parser = argparse.ArgumentParser(description="KMeans Clustering")
     parser.add_argument("--dataset", help="The path to the dataset file in CSV format")
 
