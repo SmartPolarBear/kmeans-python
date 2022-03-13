@@ -1,10 +1,14 @@
 import argparse
 from typing import Final
 
+# 进行数值计算
 import numpy as np
+# 用于读取csv文件和方便地进行方差、均值计算
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
+
+# 使用方法: main.py --dataset <数据集路径>
 
 
 class KMeans:
